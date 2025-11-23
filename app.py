@@ -40,7 +40,7 @@ USERS = {
 def check_login(username, password):
  """Vérifie si le nom et le mot de passe correspondent"""
  if username in USERS and USERS[username] == password:
- return True
+     return True
  return False
 
 def get_user_data_file(username):
@@ -56,7 +56,7 @@ def load_data(username):
  with open(filename, "r") as f:
  return json.load(f)
  except (json.JSONDecodeError, ValueError):
- return {"workouts": [], "nutrition": []}
+     return {"workouts": [], "nutrition": []}
 
 def save_data(data, username):
  filename = get_user_data_file(username)
@@ -221,5 +221,6 @@ if st.session_state['logged_in']:
  main_app()
 else:
  login_page()
+
 
 
