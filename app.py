@@ -43,7 +43,7 @@ USERS = {
 def check_login(username, password):
  """Vérifie si le nom et le mot de passe correspondent"""
  if username in USERS and USERS[username] == password:
- return True
+     return True
  return False
 
 def get_user_data_file(username):
@@ -291,3 +291,4 @@ if st.session_state['logged_in']:
  main_app()
 else:
  login_page()
+
