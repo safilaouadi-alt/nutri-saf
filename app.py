@@ -51,7 +51,7 @@ def get_user_data_file(username):
 def load_data(username):
  filename = get_user_data_file(username)
  if not os.path.exists(filename):
- return {"workouts": [], "nutrition": []}
+     return {"workouts": [], "nutrition": []}
  try:
  with open(filename, "r") as f:
  return json.load(f)
@@ -221,6 +221,7 @@ if st.session_state['logged_in']:
  main_app()
 else:
  login_page()
+
 
 
 
