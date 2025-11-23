@@ -6,7 +6,6 @@ import time
 from datetime import datetime
 
 # --- CONFIGURATION ---
-# NOM OFFICIEL DE L'APPLICATION
 APP_NAME = "Nutri Saf" 
 
 st.set_page_config(
@@ -15,7 +14,7 @@ st.set_page_config(
  layout="wide"
 )
 
-# --- 3. BASE DE DONNÉES ALIMENTAIRE INTELLIGENTE (Pour 100g) ---
+# --- BASE DE DONNÉES ALIMENTAIRE (Pour 100g) ---
 FOOD_DB = {
  "Riz Basmati (cuit)": {"kcal": 120, "prot": 3.5, "carbs": 25, "fat": 0.4},
  "Blanc de Poulet (cuit)": {"kcal": 165, "prot": 31, "carbs": 0, "fat": 3.6},
@@ -31,23 +30,20 @@ FOOD_DB = {
 }
 
 # --- GESTION DES UTILISATEURS ---
-# C'est ici que tu crées les comptes pour tes amis !
-# Format : "NomUtilisateur": "MotDePasse"
 USERS = {
- "saf": "admin", # Ton compte perso
- "coach": "fit2024", # Un autre compte
- "invite": "1234", # Compte pour un ami
- "julie": "password" # Compte pour une amie
+ "saf": "admin",
+ "coach": "fit2024",
+ "invite": "1234",
+ "julie": "password"
 }
 
 def check_login(username, password):
  """Vérifie si le nom et le mot de passe correspondent"""
  if username in USERS and USERS[username] == password:
-     return True
+ return True
  return False
 
 def get_user_data_file(username):
- """Génère un nom de fichier unique pour chaque utilisateur (ex: data_saf.json)"""
  clean_name = "".join(x for x in username if x.isalnum())
  return f"data_{clean_name}.json"
 
@@ -75,7 +71,6 @@ if 'username' not in st.session_state:
 
 def login_page():
  st.markdown(f"<h1 style='text-align: center;'>Bienvenue sur {APP_NAME} </h1>", unsafe_allow_html=True)
- st.markdown("<p style='text-align: center;'>Connecte-toi pour suivre tes perfs et tes macros.</p>", unsafe_allow_html=True)
  
  col1, col2, col3 = st.columns([1, 1, 1])
  with col2:
@@ -93,46 +88,37 @@ def login_page():
  else:
  st.error("Identifiants incorrects.")
  
- with st.expander(" Infos de connexion (pour tester)"):
- st.write("Essaie avec : **saf** / **admin**")
+ with st.expander(" Infos de connexion"):
+ st.write("Test : saf / admin")
 
 # --- APPLICATION PRINCIPALE ---
 def main_app():
- # Barre latérale
  with st.sidebar:
- st.title(f" Profil : {st.session_state['username'].capitalize()}")
- st.metric("Application", APP_NAME)
- 
+ st.title(f" {st.session_state['username'].capitalize()}")
  if st.button("Se déconnecter", type="primary"):
  st.session_state['logged_in'] = False
  st.session_state['username'] = ''
- st.rerun()
- 
+ st.rerun() 
  st.markdown("---")
- menu = st.radio("Menu", [" Entraînement", " Nutrition (Smart)", " Mes Progrès"])
+ menu = st.radio("Menu", [" Entraînement", " Nutrition", " Progrès"])
 
- # Chargement des données spécifiques à l'utilisateur connecté
  data = load_data(st.session_state['username'])
 
- # -----------------------
  # PAGE ENTRAÎNEMENT
- # -----------------------
  if menu == " Entraînement":
- st.header(f"Séance de {st.session_state['username'].capitalize()}")
- 
+ st.header("Séance du jour")
  with st.expander(" Ajouter un exercice", expanded=True):
  with st.form("workout_form"):
  col1, col2 = st.columns(2)
  with col1:
  date = st.date_input("Date", datetime.now())
- exercise = st.text_input("Exercice (ex: Développé Couché)")
+ exercise = st.text_input("Nom de l'exercice")
  with col2:
- series = st.number_input("Séries", min_value=1, value=4)
- reps = st.number_input("Répétitions", min_value=1, value=10)
- weight = st.number_input("Poids (kg)", min_value=0.0, value=0.0, step=0.5)
+ series = st.number_input("Séries", 1, 10, 4)
+ reps = st.number_input("Reps", 1, 100, 10)
+ weight = st.number_input("Poids (kg)", 0.0, 500.0, 0.0, 0.5)
  
- submitted = st.form_submit_button("Enregistrer la perf", use_container_width=True)
- if submitted:
+ if st.form_submit_button("Valider"):
  if exercise:
  new_entry = {
  "date": date.strftime("%Y-%m-%d"),
@@ -143,152 +129,97 @@ def main_app():
  }
  data["workouts"].append(new_entry)
  save_data(data, st.session_state['username'])
- st.success(f" {exercise} ajouté !")
- else:
- st.warning("N'oublie pas de nommer l'exercice.")
+ st.success("Enregistré !")
 
  st.divider()
- 
- # MINUTEUR INTELLIGENT
- st.subheader(" Minuteur de Repos")
- col_min, col_sec, col_btn = st.columns([1, 1, 2])
- 
- with col_min:
- minutes = st.number_input("Minutes", min_value=0, max_value=59, value=1)
- with col_sec:
- seconds = st.number_input("Secondes", min_value=0, max_value=59, value=30)
- 
- total_seconds = (minutes * 60) + seconds
- 
- with col_btn:
- st.write("###") # Espace visuel
- if st.button("Lancer le chrono", use_container_width=True):
- progress_text = f"Repos : {minutes}m {seconds}s"
- my_bar = st.progress(0, text=progress_text)
- 
- step = 100 / total_seconds if total_seconds > 0 else 100
- 
- for i in range(total_seconds):
+ st.subheader(" Minuteur")
+ c1, c2, c3 = st.columns([1,1,2])
+ with c1:
+ mins = st.number_input("Minutes", 0, 59, 1)
+ with c2:
+ secs = st.number_input("Secondes", 0, 59, 30)
+ with c3:
+ st.write("##")
+ if st.button("Lancer"):
+ tot = mins * 60 + secs
+ bar = st.progress(0)
+ for i in range(tot):
  time.sleep(1)
- current_progress = int((i + 1) * step)
- if current_progress > 100: current_progress = 100
- remaining = total_seconds - (i + 1)
- mins_rem = remaining // 60
- secs_rem = remaining % 60
- my_bar.progress(current_progress, text=f"Reste : {mins_rem}m {secs_rem}s")
- 
- st.balloons()
- st.success("C'est reparti ! ")
+ bar.progress((i+1)/tot, text=f"Reste : {tot-i-1}s")
+ st.success("Go !")
 
- # -----------------------
  # PAGE NUTRITION
- # -----------------------
- elif menu == " Nutrition (Smart)":
- st.header("Calculateur de Calories & Macros")
- 
+ elif menu == " Nutrition":
+ st.header("Calculateur Macros")
  with st.expander(" Ajouter un repas", expanded=True):
- col_food, col_qty = st.columns([2, 1])
- 
- with col_food:
- food_choice = st.selectbox("Choisir un aliment", list(FOOD_DB.keys()))
- 
- with col_qty:
- quantity = st.number_input("Quantité (grammes)", min_value=0, value=100, step=10)
+ c_food, c_qty = st.columns([2, 1])
+ with c_food:
+ choix = st.selectbox("Aliment", list(FOOD_DB.keys()))
+ with c_qty:
+ qty = st.number_input("Grammes", 0, 1000, 100, 10)
 
- # Calculs automatiques
- infos_100g = FOOD_DB[food_choice]
- 
- if food_choice != "Autre (Entrée manuelle)":
- ratio = quantity / 100
- calc_kcal = round(infos_100g["kcal"] * ratio)
- calc_prot = round(infos_100g["prot"] * ratio, 1)
- calc_carbs = round(infos_100g["carbs"] * ratio, 1)
- calc_fat = round(infos_100g["fat"] * ratio, 1)
- 
- st.info(f" **{quantity}g de {food_choice}** apportent :")
- c1, c2, c3, c4 = st.columns(4)
- c1.metric("Kcal", calc_kcal)
- c2.metric("Prot", f"{calc_prot}g")
- c3.metric("Glucides", f"{calc_carbs}g")
- c4.metric("Lipides", f"{calc_fat}g")
- 
+ info = FOOD_DB[choix]
+ if choix != "Autre (Entrée manuelle)":
+ ratio = qty/100
+ kcal = round(info["kcal"]*ratio)
+ prot = round(info["prot"]*ratio, 1)
+ st.info(f"{qty}g = {kcal} kcal | {prot}g prot")
  else:
- col1, col2, col3, col4 = st.columns(4)
- calc_kcal = col1.number_input("Kcal", value=0)
- calc_prot = col2.number_input("Prot (g)", value=0.0)
- calc_carbs = col3.number_input("Glucides (g)", value=0.0)
- calc_fat = col4.number_input("Lipides (g)", value=0.0)
+ kcal = st.number_input("Kcal", 0)
+ prot = st.number_input("Prot", 0.0)
+ # On simplifie pour l'affichage manuel
+ carbs = 0
+ fat = 0
 
- if st.button("Manger ce repas", use_container_width=True):
- if quantity > 0:
- nutri_entry = {
+ if st.button("Manger"):
+ # Si manuel, on met 0 pour carbs/fat par défaut pour éviter les erreurs
+ if choix == "Autre (Entrée manuelle)":
+ c_val, f_val = 0, 0
+ else:
+ c_val = round(info["carbs"]*ratio, 1)
+ f_val = round(info["fat"]*ratio, 1)
+ 
+ entry = {
  "date": datetime.now().strftime("%Y-%m-%d"),
- "food": food_choice,
- "quantity": quantity,
- "calories": calc_kcal,
- "protein": calc_prot,
- "carbs": calc_carbs,
- "fats": calc_fat
+ "food": choix,
+ "quantity": qty,
+ "calories": kcal,
+ "protein": prot,
+ "carbs": c_val,
+ "fats": f_val
  }
- data["nutrition"].append(nutri_entry)
+ data["nutrition"].append(entry)
  save_data(data, st.session_state['username'])
- st.success("Repas ajouté ! ")
- else:
- st.error("La quantité doit être supérieure à 0.")
+ st.success("Ajouté !")
 
  st.divider()
- st.subheader("Bilan Journalier")
- 
- today = datetime.now().strftime("%Y-%m-%d")
- df_nutri = pd.DataFrame(data["nutrition"])
- 
- if not df_nutri.empty:
- today_data = df_nutri[df_nutri["date"] == today]
- 
- if not today_data.empty:
- total_cal = int(today_data["calories"].sum())
- total_prot = round(today_data["protein"].sum(), 1)
- total_carbs = round(today_data["carbs"].sum(), 1)
- total_fat = round(today_data["fats"].sum(), 1)
- 
- # Affichage visuel avec des barres de progression simulées
- k1, k2, k3, k4 = st.columns(4)
- k1.metric(" Total Calories", total_cal)
- k2.metric(" Protéines", f"{total_prot}g")
- k3.metric(" Glucides", f"{total_carbs}g")
- k4.metric(" Lipides", f"{total_fat}g")
- 
- st.dataframe(today_data[["food", "quantity", "calories", "protein", "carbs", "fats"]], use_container_width=True)
- else:
- st.info("Rien mangé aujourd'hui ? Ajoute un repas ci-dessus !")
- else:
- st.info("Ton historique nutritionnel est vide.")
-
- # -----------------------
- # PAGE PROGRÈS
- # -----------------------
- elif menu == " Mes Progrès":
- st.header("Suivi des performances")
- df = pd.DataFrame(data["workouts"])
- 
+ st.subheader("Aujourd'hui")
+ df = pd.DataFrame(data["nutrition"])
  if not df.empty:
- unique_exercises = df["exercise"].unique()
- exo_choice = st.selectbox("Voir la progression sur :", unique_exercises)
- 
- df_exo = df[df["exercise"] == exo_choice].copy()
- df_exo["date"] = pd.to_datetime(df_exo["date"])
- df_exo = df_exo.sort_values("date")
- 
- st.line_chart(df_exo, x="date", y="weight")
- 
- max_weight = df_exo['weight'].max()
- st.success(f" Ton record personnel sur **{exo_choice}** est de **{max_weight} kg** !")
- else:
- st.info("Enregistre ta première séance pour voir les graphiques apparaître ici.")
+ today = datetime.now().strftime("%Y-%m-%d")
+ df_uj = df[df["date"] == today]
+ if not df_uj.empty:
+ k1, k2, k3 = st.columns(3)
+ k1.metric("Kcal", int(df_uj["calories"].sum()))
+ k2.metric("Prot", round(df_uj["protein"].sum(), 1))
+ st.dataframe(df_uj, use_container_width=True)
 
-# --- LOGIQUE DE LANCEMENT ---
+ # PAGE PROGRÈS
+ elif menu == " Progrès":
+ st.header("Graphiques")
+ df = pd.DataFrame(data["workouts"])
+ if not df.empty:
+ exos = df["exercise"].unique()
+ choix = st.selectbox("Exercice", exos)
+ df_g = df[df["exercise"] == choix].sort_values("date")
+ st.line_chart(df_g, x="date", y="weight")
+ st.success(f"Max : {df_g['weight'].max()} kg")
+ else:
+ st.info("Pas encore de données.")
+
 if st.session_state['logged_in']:
  main_app()
 else:
  login_page()
+
 
